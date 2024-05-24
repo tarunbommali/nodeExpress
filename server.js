@@ -19,7 +19,6 @@ const initializeDBAndServer = async () => {
       driver: sqlite3.Database,
     });
 
-    // Use environment variable for port, default to 3000
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
       console.log(`Server Running at http://localhost:${PORT}/`);
@@ -32,7 +31,6 @@ const initializeDBAndServer = async () => {
 
 initializeDBAndServer();
 
-// GET method to fetch all books
 app.get("/books/", async (request, response) => {
   try {
     const getBooksQuery = `
@@ -50,60 +48,7 @@ app.get("/books/", async (request, response) => {
   }
 });
 
-// POST method to add a new book
-app.post("/book/", async (request, response) => {
-  const { title, author, genre, published_year } = request.body;
-
-  // Validate input
-  if (!title || !author || !genre || !published_year) {
-    return response.status(400).send({ error: "All fields are required" });
-  }
-
-  const addBookQuery = `
-    INSERT INTO
-      book (title, author, genre, published_year)
-    VALUES
-      ('${title}', '${author}', '${genre}', ${published_year});`;
-
-  try {
-    const dbResponse = await db.run(addBookQuery);
-    const bookId = dbResponse.lastID;
-    response.status(201).send({ bookId: bookId });
-  } catch (error) {
-    console.log(`Error: ${error.message}`);
-    response.status(500).send({ error: error.message });
-  }
-});
-
-// POST method to add multiple new books
-app.post("/books/", async (request, response) => {
-  const books = request.body; // Expecting an array of books
-
-  if (!Array.isArray(books)) {
-    return response.status(400).send({ error: "Request body should be an array of books" });
-  }
-
-  try {
-    const insertPromises = books.map(book => {
-      const { title, author, genre, published_year } = book;
-
-      // Validate input
-      if (!title || !author || !genre || !published_year) {
-        throw new Error("All fields are required for each book");
-      }
-
-      const addBookQuery = `
-        INSERT INTO
-          book (title, author, genre, published_year)
-        VALUES
-          ('${title}', '${author}', '${genre}', ${published_year});`;
-      return db.run(addBookQuery);
-    });
-
-    await Promise.all(insertPromises);
-    response.status(201).send({ message: "Books added successfully" });
-  } catch (error) {
-    console.log(`Error: ${error.message}`);
-    response.status(500).send({ error: error.message });
-  }
+// Define a catch-all route to handle 404 errors
+app.use((req, res, next) => {
+  res.status(404).send("Whoops! We've got nothing under this link.");
 });
